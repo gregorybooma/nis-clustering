@@ -50,11 +50,8 @@ parse_stata_nis <- function(stata_file, char_na = TRUE) {
     type_wordmap <- c("int" = "integer", "byte" = "integer", "double" = "double", "long" = "double", "float" = "double", "str" = "character")
     type_abbrevmap <- c("int" = "i", "byte" = "i", "double" = "d", "long" = "d", "float" = "d", "str" = "c")
     raw_types <- str_extract(varBlock, "^\\w+")
-    # dplyr recode with !!! seems to work -- figure out if plyr no longer needed!
-    # type_words <- revalue(raw_types, type_wordmap)
     type_words <- recode(raw_types, !!!type_wordmap)
     names(type_words) <- var_names
-    #type_abbrevs <- revalue(raw_types, type_abbrevmap)
     type_abbrevs <- recode(raw_types, !!!type_abbrevmap)
     names(type_abbrevs) <- var_names
     var_types <- list(words = type_words, abbrevs = type_abbrevs)

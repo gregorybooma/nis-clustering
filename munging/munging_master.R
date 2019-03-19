@@ -59,9 +59,9 @@ label(core_data) <- lapply(names(core_meta$var_labs), function(x) { label(core_d
 
 # Subset the df, getting vars of interest, and taking only data for Northeast states. Can trim
 # white space now.
-coreset <- core_data %>% filter(HOSPST %in% c("CT","MA","ME","NH","NJ","NY","PA","RI","VT")) %>% select(setdiff(names(core_data), c(c("AGEDAY","ASOURCE","ASOURCEUB92", "ASOURCE_X","AWEEKEND","DQTR_X","DRG","DRG24","DRGVER","DRG_NoPOA", "H_CONTRL", "HCUP_ED","HOSPBRTH","HOSPST","LOS_X","MDC","MDC24","MDC_NoPOA","MDNUM1_R","MDNUM2_R","NECODE","NEOMAT","NIS_STRATUM","NPR","PointOfOriginUB04","PAY1_X","PAY2_X","PointOfOrigin_X","TOTCHG_X"),grep("PRD.+",names(core_data),value = T)))) %>% mutate_if(is.character,str_trim)
+core_set <- core_data %>% filter(HOSPST %in% c("CT","MA","ME","NH","NJ","NY","PA","RI","VT")) %>% select(setdiff(names(core_data), c(c("AGEDAY","ASOURCE","ASOURCEUB92", "ASOURCE_X","AWEEKEND","DQTR_X","DRG","DRG24","DRGVER","DRG_NoPOA", "H_CONTRL", "HCUP_ED","HOSPBRTH","HOSPST","LOS_X","MDC","MDC24","MDC_NoPOA","MDNUM1_R","MDNUM2_R","NECODE","NEOMAT","NIS_STRATUM","NPR","PointOfOriginUB04","PAY1_X","PAY2_X","PointOfOrigin_X","TOTCHG_X"),grep("PRD.+",names(core_data),value = T)))) %>% mutate_if(is.character,str_trim)
 message("Created subset of core data.")
-message(nrow(coreset))
+message(nrow(core_set))
 # free-up some memory
 rm(core_data)
 gc(verbose = F)
@@ -117,7 +117,7 @@ gc(verbose = F)
 # features for chronic conditions and hospital rural and teaching status
 source("other_vars.R")
 
-# Make sure the final set has all rows (check against message for coreset, above).
+# Make sure the final set has all rows (check against message for core_set, above).
 message(nrow(nis_set))
 
 # Write the full subset to a file. NOTE: For better performance, using iotools raw (unquoted) output,

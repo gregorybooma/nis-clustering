@@ -4,7 +4,7 @@ if (basename(getwd()) == "nis-clustering") {
     stopifnot(basename(getwd()) == "workspace")
 }
 lapply(c("iotools", "Hmisc", "plyr", "dplyr", "stringr"), require, quietly = T, character.only = T)
-options(digits = 15, stringsAsFactors = F, scipen = 999999999)
+options(digits = 15, stringsAsFactors = F, scipen = 999)
 
 # need to identify record-specific groups of diagnoses, so start with a
 # df of diagnoses
@@ -12,16 +12,11 @@ dx_df_in <- select(nis_set,matches("^DX[0-5]{1}$"))
 
 # want to truncate to 3-digit dx codes to avoid variations in physician diagnosis, and
 # reduce the number of levels
-for(i in seq_along(dx_df_in)) {
-    indcol <- names(dx_df_in)[i]
-    #message(indcol)
-    dx_df_in[,indcol] <- str_sub(dx_df_in[,indcol],1,3)
-    rm(indcol)
-}
+dx_trunc <- dx_df_in %>% mutate_all(~str_sub(.,1,3))
 
 # now form the groups and write vars to the merged set...
 # N.B.: this does not work with row-wise apply(), so using do.call()
-dx_raw <- do.call(paste,dx_df_in)
+dx_raw <- do.call(paste,dx_trunc)
 message("created raw vector of concatenated dx vals")
 
 dx_clean <- gsub("NA\\.?|\\.NA","",gsub("\\s+",".",dx_raw))
@@ -29,25 +24,22 @@ message("cleaned the vector")
 
 dx_ord <- unlist(lapply(dx_clean,function(x) {
     paste(unique(unlist(strsplit(x,"\\."))),collapse = ".")
-}))
-dx_ord[which(dx_ord == "")] <- NA
+})) %>% na_if("")
 message("created dx order vector")
 
 dx_srt <- unlist(lapply(dx_clean,function(x) {
     # have to use as.numeric() to get a numeric sequence instead of character (e.g. 888 before 9) from sort
     paste(sort(unique(as.numeric(unlist(strsplit(x,"\\."))))),collapse = ".")
-}))
-dx_srt[which(dx_srt == "")] <- NA
+})) %>% na_if("")
 message("created sorted dx vector")
 
-dx_df <- data.frame(cbind(dx_ord,dx_srt))
-names(dx_df) <- c("DX_ORD","DX_SRT")
+dx_df <- data.frame(cbind(dx_ord,dx_srt)) %>% set_colnames(c("DX_ORD","DX_SRT"))
 
 nis_set <- cbind(nis_set,dx_df)
 label(nis_set$DX_ORD) <- "Unique grouped diagnosis, in order of diagnosis"
 label(nis_set$DX_SRT) <- "Unique grouped diagnosis, sorted"
 
-rm(dx_df_in,dx_raw,dx_clean,dx_ord,dx_srt,dx_df)
+rm(dx_df_in, dx_trunc, dx_raw, dx_clean, dx_ord, dx_srt, dx_df)
 message("Finished dx vars")
 
 # alternate ages, based-upon Maine's assignment of age (midpoint of 5-year bins
