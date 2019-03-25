@@ -72,50 +72,51 @@ source("../munging/set_core_na.R")
 # Load and check the diagnosis and procedure group data.
 dxpr_data <- input.file("../../../consulting/mgh_acad/hcup/NIS_2009_DX_PR_GRPS.ASC", dstrfw, col_types = dxpr_meta$var_types[[1]], widths = dxpr_meta$var_widths) %>% set_colnames(dxpr_meta$var_names) %>% arrange(KEY)
 
-source("dxpr_check.R")
+source("../munging/dxpr_check.R")
 dxpr_check(dxpr_data)
 
 # Add labels for vars (Hmisc required). need as.character() to strip name attribute before assigning.
 label(dxpr_data) <- lapply(names(dxpr_meta$var_labs), function(x) { label(dxpr_data[,x]) <- as.character(dxpr_meta$var_labs[x]) })
 
 # Subset diagnosis and procedure data, keeping only KEY, procedure, and chronic vars -- and clean-up.
-dxpr_set <- dxpr_data %>% select(grep("^(CHR|PCL|KEY)", names(dxpr_data), value = T)) %>% mutate_if(is.character,str_trim)
+dxpr_set <- dxpr_data %>% select(matches("^(CHR|PCL|KEY)")) %>% mutate_if(is.character,str_trim)
 rm(dxpr_data)
-
+ 
 # Recode diagnosis and procedure data missing and blank as NA.
-source("set_dxpr_na.R")
+source("../munging/set_dxpr_na.R")
 
 # Join diagnosis and procedure subset to core subset, matching and sorting on KEY.
-merged_set <- merge(core_set,dxpr_set, by = "KEY", all.x = T, all.y = F, sort = T)
+# Not sure if arrange() is redundant or not, but little diff. in overhead.
+merged_set <- left_join(core_set, dxpr_set, by = "KEY") %>% arrange(KEY)
 rm(core_set, dxpr_set)
 message("Merged the core and diagnosis/procedure subsets.")
 gc(verbose = F)
 
 # Load and check the hospital data.
-hosp_data <- input.file("../../../../consulting/mgh_acad/hcup/NIS_2009_Hospital.ASC", dstrfw, col_types = hosp_meta$var_types[[1]], widths = hosp_meta$var_widths) %>% set_colnames(hosp_meta$var_names) %>% arrange(HOSPID)
+hosp_data <- input.file("../../../consulting/mgh_acad/hcup/NIS_2009_Hospital.ASC", dstrfw, col_types = hosp_meta$var_types[[1]], widths = hosp_meta$var_widths) %>% set_colnames(hosp_meta$var_names) %>% arrange(HOSPID)
 
-source("hosp_check.R")
+source("../munging/hosp_check.R")
 hosp_check(hosp_data)
 
 # Add labels for vars (Hmisc required). need as.character() to strip name attribute before assigning.
 label(hosp_data) <- lapply(names(hosp_meta$var_labs), function(x) { label(hosp_data[,x]) <- as.character(hosp_meta$var_labs[x]) })
 
 # Subset hospital data, keeping key vars and vars of interest.
-hosp_set <- hosp_data %>% select(grep("^(HOSPID|AHAID|HOSPNAME|HOSPCITY|HOSPST|HOSPSTCO|HOSPZIP|HOSP_BEDSIZE|H_CONTRL|HOSP_LOCTEACH|HOSP_RNPCT|HOSP_RNFTEAPD|HOSP_LPNFTEAPD)", names(hosp_data), value = T)) %>% mutate_if(is.character,str_trim)
+hosp_set <- hosp_data %>% select(matches("^(HOSPID|AHAID|HOSPNAME|HOSPCITY|HOSPST|HOSPSTCO|HOSPZIP|HOSP_BEDSIZE|H_CONTRL|HOSP_LOCTEACH|HOSP_RNPCT|HOSP_RNFTEAPD|HOSP_LPNFTEAPD)")) %>% mutate_if(is.character,str_trim)
 rm(hosp_data)
 
 # Recode hospital data missing and blank as NA.
-source("set_hosp_na.R")
+source("../munging/set_hosp_na.R")
 
 # Join hospital subset to the merged subset, matching on HOSPID -- leave sorted on KEY.
-nis_set <- merge(merged_set, hosp_set, by = "HOSPID", all.x = T, sort = F)
+nis_set <- left_join(merged_set, hosp_set, by = "HOSPID") %>% arrange(KEY)
 rm(merged_set, hosp_set)
 message("Merged the hospital subset to the core/diagnosis and procedure subset.")
 gc(verbose = F)
 
 # Maine bins ages, so create a var for Maine age from AGE; Also create additional
 # features for chronic conditions and hospital rural and teaching status
-source("other_vars.R")
+source("../munging/other_vars.R")
 
 # Make sure the final set has all rows (check against message for core_set, above).
 message(nrow(nis_set))
@@ -135,7 +136,7 @@ nis_set <- nis_set[setdiff(names(nis_set),dropvars)]
 #nis_set <- nis_set[-grep("DXCCS([4-9]|1[0-9]|2[0-5])",names(nis_set))]
 
 # convert categorical vars to factors from numeric and character
-source("makeFactors.R")
+source("../munging/makeFactors.R")
 glimpse(nis_set)
 str(nis_set)
 
@@ -145,7 +146,7 @@ str(nis_set)
 # hospitals based upon hospital zipcode.  This is particularly needed in New England, upstate New York,
 # and New Jersey where large proportions of hospital areas cross state boundaries.  For hospital areas, I
 # use zipcode to hospital zone crosswalk tables developed as part of the Dartmouth Atlas of Health Care project.
-source("spatial.R")
+source("../munging/spatial.R")
 
 # Write the smaller subset of data to a file.
 names(nis_set) <- str_to_upper(names(nis_set))
