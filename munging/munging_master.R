@@ -136,7 +136,7 @@ nis_set <- nis_set[setdiff(names(nis_set),dropvars)]
 #nis_set <- nis_set[-grep("DXCCS([4-9]|1[0-9]|2[0-5])",names(nis_set))]
 
 # convert categorical vars to factors from numeric and character
-source("../munging/makeFactors.R")
+source("../munging/make_factors.R")
 glimpse(nis_set)
 str(nis_set)
 
