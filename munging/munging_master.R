@@ -146,7 +146,7 @@ str(nis_set)
 # hospitals based upon hospital zipcode.  This is particularly needed in New England, upstate New York,
 # and New Jersey where large proportions of hospital areas cross state boundaries.  For hospital areas, I
 # use zipcode to hospital zone crosswalk tables developed as part of the Dartmouth Atlas of Health Care project.
-source("../munging/spatial.R")
+source("../munging/make_spatial.R")
 
 # Write the smaller subset of data to a file.
 names(nis_set) <- str_to_upper(names(nis_set))
