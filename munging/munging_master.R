@@ -124,8 +124,8 @@ message(nrow(nis_set))
 # Write the full subset to a file. NOTE: For better performance, using iotools raw (unquoted) output,
 # so using pipe as delimiter to avoid errors when loading back into R (risk different row lengths if commas used).
 # A bug in iotools 0-1.12 requires writing headers to file and then appending. Resolved in subsequent versions.
-cat(noquote(paste0(paste0(names(nis_set),collapse = "|"),"\n")),file = "nis-subset-large.csv")
-write.csv.raw(nis_set, "nis-subset-large.csv", sep = "|", append=TRUE)
+cat(noquote(paste0(paste0(names(nis_set),collapse = "|"),"\n")),file = "../workspace/nis-subset-large.csv")
+write.csv.raw(nis_set, "../workspace/nis-subset-large.csv", sep = "|", append=TRUE)
 message("Wrote larger subset to nis-subset-large.csv")
 
 # Drop vars that are not currently needed.
@@ -151,8 +151,8 @@ source("../munging/make_spatial.R")
 # Write the smaller subset of data to a file.
 names(nis_set) <- str_to_upper(names(nis_set))
 # A bug in iotools 0-1.12 requires writing headers to file and then appending. Resolved in subsequent versions.
-cat(noquote(paste0(paste0(names(nis_set),collapse = "|"),"\n")),file = "nis-subset-small.csv")
-write.csv.raw(nis_set, "nis-subset-small.csv", sep = "|", append=TRUE)
+cat(noquote(paste0(paste0(names(nis_set),collapse = "|"),"\n")),file = "../workspace/nis-subset-small.csv")
+write.csv.raw(nis_set, "../workspace/nis-subset-small.csv", sep = "|", append=TRUE)
 message("Wrote smaller subset to nis-subset-small.csv")
 
 rm(dropvars)

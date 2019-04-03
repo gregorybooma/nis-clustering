@@ -182,4 +182,4 @@ plot(hsa_polys, col = brewer.pal(12,"Set3"))
 plot(state_polys, col = "transparent", border = "grey", add = T)
 polygonsLabel(hsa_polys,labels = names(hsa_polys), method = "centroid", doPlot = T, cex = 0.45)
 
-rm(hosp_zones,hrr_polys,nis_zips,nis_zip_zones,zip_polys,zip_zones,set_polys,state_polys_raw,ids,state_hole_geom,state_poly_geom,state_poly_geom_noholes)
+rm(hosp_zones,hrr_polys,nis_zips,nis_zip_zones,zip_zones,set_polys,state_polys_raw,ids,state_hole_geom,state_poly_geom,state_poly_geom_noholes)
