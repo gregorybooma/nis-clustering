@@ -20,31 +20,32 @@ options(digits = 15, stringsAsFactors = F, scipen = 999)
 
 # Maine first
 # unneeded vars get in the way
-edame$hrrnum <- NULL
-edame$hrrstate <- NULL
+edame <- edame %>% select(-c(hrrnum,hrrstate))
 
 # create binary vars for each dx.
 # NA indicates no chronic disease (as opposed to missing value), so recoding to be
-# more clear -- using 0 as level, since unused as a dx code
+# more clear -- using 0 as level, since unused as a dx code.
+# Base R indexing is much faster for this.
 levels(edame$dx_srt) <- c(levels(edame$dx_srt),"0")
 edame$dx_srt[is.na(edame$dx_srt)] <- "0"
-
 # split each dx group to get all unique diagnosis codes
 dxvect <- paste(sort(unique(as.numeric(unlist(str_split(edame$dx_srt,"\\."))))))
 message(length(dxvect))
 
-# set binary vars for each dx
-# wine time: this takes a few hours -- just no finesse at this point...
+# Set binary vars for each dx
+# This version is much faster (seconds v. hour-plus)!
 for (i in seq_along(dxvect)) {
-    dxnum <- dxvect[i]
-    varname <- paste0("dx",dxnum)
-    edame[,varname] <- factor(rep.int("0",nrow(edame)),levels = c("0","1"))
-    for (j in 1:nrow(edame)) {
-        if (dxnum %in% unlist(str_split(edame$dx_srt[j],"\\."))) {
-            edame[,varname][j] <- "1"
-        }
-    }
+  dxnum <- dxvect[i]
+  varname <- paste0("dx",dxnum)
+  edame <- edame %>% mutate(!!varname := factor(rep.int("0",nrow(edame)),levels = c("0","1")))
+  #edame <- edame %>% mutate(!!varname := case_when(str_detect(dx_srt,paste0("(^|\\.)",dxnum,"{1}(\\.|$)")) ~ "1", TRUE ~ "0"))
+
+  # This is a bit faster and more readable. Leaving the above mutate() with case_when() as example
+  # for recoding with multiple values.
+  idx_rows <- str_which(edame$dx_srt,paste0("(^|\\.)",dxnum,"{1}(\\.|$)"))
+  edame[,varname][idx_rows] <- "1"
 }
+
 #edame$dx_srt <- NULL
 #edame$nchronic <- NULL
 
