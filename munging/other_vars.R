@@ -59,7 +59,8 @@ label(nis_set$AYEAR) <- "Admission year"
 
 # code of admission year and month
 # make sure no NAs in AMONTH
-nis_set <- nis_set %>% mutate_at("AMONTH", ~coalesce(.,0))
+# have to force integer type bc interpreting as double
+nis_set <- nis_set %>% mutate_at("AMONTH", ~coalesce(.,as.integer(0)))
 nis_set <- nis_set %>% mutate(AYRMO = if_else(AMONTH == 0, NA_real_, as.numeric((AYEAR * 100) + AMONTH)))
 label(nis_set$AYRMO) <- "Code for admission year and month"
 

@@ -102,15 +102,24 @@ length(unique(nis_zip_zones$hospzip))
 setequal(nis_zip_zones$hospst,nis_zip_zones$hsastate)
 setequal(nis_zip_zones$hospst,nis_zip_zones$hrrstate)
 # hospst is redundant, so drop for joining
-nis_zip_zones$hospst <- NULL
+nis_zip_zones <- nis_zip_zones %>% select(-hospst)
 
 # add hospital zones to the NIS subset...
-nis_set <- left_join(nis_set,nis_zip_zones,"hospzip")
+nis_set <- left_join(nis_set,nis_zip_zones,by = "hospzip")
 # confirm that only Maine hospitals are missing hrrstate
 countNA(nis_set$hospst)
-length(which(is.na(nis_set$hrrstate) & nis_set$hospst != "ME"))
-# populate hrrstate missing with ME
-nis_set <- nis_set %>% mutate_at("hrrstate", ~coalesce(.,"ME"))
+length(which(nis_set$hospst=="ME"))
+length(which(is.na(nis_set$hrrstate) & nis_set$hospst == "ME"))
+length(which(is.na(nis_set$hrrnum)))
+
+# populate hrrstate and hsastate missing with ME
+# although very NW of ME is in a NH hrr there are no facilities there
+nis_set <- nis_set %>% mutate_at("hrrstate", ~coalesce(.,"ME")) %>% mutate_at("hsastate", ~coalesce(.,"ME"))
+
+#######################################################################################
+# EVERYTHING BELOW THIS POINT IS CREATION OF SPATIAL LAYERS FOR MAPPING PURPOSES ONLY.
+# NO DATA BELOW IS USED IN THE CLUSTERING PROCESS.
+# #####################################################################################
 
 # make sure all zipcode polygons have hospital areas assigned
 check <- left_join(set_polys@data,zip_zones,"zip")

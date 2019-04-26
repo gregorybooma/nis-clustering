@@ -50,37 +50,43 @@ for (i in seq_along(dxvect)) {
 #edame$nchronic <- NULL
 
 # cluster female and male separately
-edamefem <- filter(edame,female=="1")
+edame_fem <- edame %>% filter(female == "1")
 
 # first step: cluster by dx only, and add dx cluster labels as feature to female df
-edamefemdxdf <- select(edamefem,key,matches("^dx[0-9]+"))
+edame_fem_dxdf <- edame_fem %>% select(key,matches("^dx[0-9]+"))
 # clean up female df
-edamefem <- edamefem[,1:9]
-row.names(edamefemdxdf) <- edamefemdxdf$key
-edamefemdxdf$key <- NULL
-edamefemdxmat <- as.dummy(edamefemdxdf)
+edame_fem <- edame_fem %>% select(-matches("^dx[0-9]+"))
+row.names(edame_fem_dxdf) <- edame_fem_dxdf$key
+edame_fem_dxdf <- edame_fem_dxdf %>% select(-key)
+
+edame_fem_dxmat <- as.dummy(edame_fem_dxdf)
+
 # theta of 0.99392 gets best goodness numbers (best fit)
-dxclust <- rockCluster(edamefemdxmat,n=nrow(edamefemdxdf)*0.5,theta = 0.99392,debug = TRUE)
-dxclustfit <- fitted(dxclust)
-edamefem$cl <- dxclustfit$cl
-edamefem$dxclust <- paste0("dxf",edamefem$cl)
-edamefem$dxclust[edamefem$dxclust=="dxfNA"] <- NA
-edamefem$cl <- NULL
-edamefem$dxclust[is.na(edamefem$dxclust)] <- edamefem$key[is.na(edamefem$dxclust)]
+dx_clust <- rockCluster(edame_fem_dxmat,n=nrow(edame_fem_dxdf)*0.5,theta = 0.99392,debug = TRUE)
+dx_clust_fit <- fitted(dx_clust)
+
+edame_fem$cl <- dx_clust_fit$cl
+edame_fem$dxclust <- paste0("dxf",edame_fem$cl)
+
+edame_fem <- edame_fem %>% mutate_at("dxclust",~na_if(.,"dxfNA")) %>% select(-cl)
+edame_fem <- edame_fem %>% mutate_at("dxclust",~coalesce(dxclust,as.character(key)))
 
 # next step: cluster female df using all features
-mefemtoclustdf <- select(edamefem,key,age,nchronic,pay1,pl_nchs2006,race,zipinc_qrtl,dxclust)
-row.names(mefemtoclustdf) <- mefemtoclustdf$key
-mefemtoclustdf$key <- NULL
-mefemtoclustdf$dxclust <- as.factor(mefemtoclustdf$dxclust)
-mefemtoclustmat <- as.dummy(mefemtoclustdf)
-mefemclust <- rockCluster(mefemtoclustmat,n=nrow(mefemtoclustdf)*0.5,theta = 0.77,debug = T)
-mefemclustfit <- fitted(mefemclust)
-edamefem$cl <- mefemclustfit$cl
-edamefem$clustid <- paste0("MEF",edamefem$cl)
-edamefem$clustid[edamefem$clustid=="MEFNA"] <- NA
-edamefem$cl <- NULL
-edamefem$clustid[is.na(edamefem$clustid)] <- edamefem$key[is.na(edamefem$clustid)]
+me_fem_to_clust <- edame_fem %>% select(key,age,nchronic,pay1,pl_nchs2006,race,zipinc_qrtl,dxclust)
+row.names(me_fem_to_clust) <- me_fem_to_clust$key
+me_fem_to_clust <- me_fem_to_clust %>% select(-key) %>% mutate(dxclust = as.factor(dxclust))
+
+me_fem_to_clust_mat <- as.dummy(me_fem_to_clust)
+
+me_fem_clust <- rockCluster(me_fem_to_clust_mat,n=nrow(me_fem_to_clust)*0.5,theta = 0.77,debug = T)
+me_fem_clust_fit <- fitted(me_fem_clust)
+
+edame_fem$cl <- me_fem_clust_fit$cl
+edame_fem$clustid <- paste0("MEF",edame_fem$cl)
+
+edame_fem$clustid[edame_fem$clustid=="MEFNA"] <- NA
+edame_fem$cl <- NULL
+edame_fem$clustid[is.na(edame_fem$clustid)] <- edame_fem$key[is.na(edame_fem$clustid)]
 
 # male dx only
 edamemale <- filter(edame,female=="0")
@@ -91,8 +97,8 @@ edamemaledxdf$key <- NULL
 edamemaledxmat <- as.dummy(edamemaledxdf)
 # theta of 0.99395 gets best goodness numbers (best fit)
 dxclust <- rockCluster(edamemaledxmat,n=nrow(edamemaledxdf)*0.5,theta = 0.99395,debug = TRUE)
-dxclustfit <- fitted(dxclust)
-edamemale$cl <- dxclustfit$cl
+dx_clust_fit <- fitted(dxclust)
+edamemale$cl <- dx_clust_fit$cl
 edamemale$dxclust <- paste0("dxm",edamemale$cl)
 edamemale$dxclust[edamemale$dxclust=="dxmNA"] <- NA
 edamemale$cl <- NULL
@@ -114,17 +120,17 @@ edamemale$clustid[is.na(edamemale$clustid)] <- edamemale$key[is.na(edamemale$clu
 
 # and look at proximus clustering
 par(mfrow=c(1,2), pty="s")
-lmplot(mefemtoclustmat, main = "Data")
+lmplot(me_fem_to_clust_mat, main = "Data")
 box()
 # results same 0.1 to 0.01 radius so stopped
-pr <- proximus(mefemtoclustmat,max.radius = 0.01,debug = T)
+pr <- proximus(me_fem_to_clust_mat,max.radius = 0.01,debug = T)
 lmplot(fitted(pr)$x, main = "Proxy")
 box()
-edamefem$prox <- fitted(pr)$pl
-edamefem$proxclustid <- paste0("PRMEF",edamefem$prox)
-edamefem$proxclustid[edamefem$proxclustid=="PRMEFNA"] <- NA
-edamefem$prox <- NULL
-edamefem$proxclustid[is.na(edamefem$proxclustid)] <- edamefem$key[is.na(edamefem$proxclustid)]
+edame_fem$prox <- fitted(pr)$pl
+edame_fem$proxclustid <- paste0("PRMEF",edame_fem$prox)
+edame_fem$proxclustid[edame_fem$proxclustid=="PRMEFNA"] <- NA
+edame_fem$prox <- NULL
+edame_fem$proxclustid[is.na(edame_fem$proxclustid)] <- edame_fem$key[is.na(edame_fem$proxclustid)]
 
 par(mfrow=c(1,2), pty="s")
 lmplot(memaletoclustmat, main = "Data")
@@ -140,7 +146,7 @@ edamemale$prox <- NULL
 edamemale$proxclustid[is.na(edamemale$proxclustid)] <- edamemale$key[is.na(edamemale$proxclustid)]
 
 # combine male and female into one df
-meclusters <- rbind(edamefem,edamemale)
+meclusters <- rbind(edame_fem,edamemale)
 
 # now rock clustering all other geographies
 # WARNING: very time consuming (days)
