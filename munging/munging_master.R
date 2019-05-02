@@ -79,8 +79,9 @@ dxpr_check(dxpr_data)
 label(dxpr_data) <- lapply(names(dxpr_meta$var_labs), function(x) { label(dxpr_data[,x]) <- as.character(dxpr_meta$var_labs[x]) })
 
 # Subset diagnosis and procedure data, keeping only KEY, procedure, and chronic vars -- and clean-up.
-dxpr_set <- dxpr_data %>% select(matches("^(CHR|PCL|KEY)")) %>% mutate_if(is.character,str_trim)
-rm(dxpr_data)
+keys <- pull(core_set,KEY)
+dxpr_set <- dxpr_data %>% select(matches("^(CHR|PCL|KEY)")) %>% filter(KEY %in% keys) %>% mutate_if(is.character,str_trim)
+rm(dxpr_data,keys)
  
 # Recode diagnosis and procedure data missing and blank as NA.
 source("../munging/set_dxpr_na.R")
@@ -124,14 +125,19 @@ message(nrow(nis_set))
 # Write the full subset to a file. NOTE: For better performance, using iotools raw (unquoted) output,
 # so using pipe as delimiter to avoid errors when loading back into R (risk different row lengths if commas used).
 # A bug in iotools 0-1.12 requires writing headers to file and then appending. Resolved in subsequent versions.
-cat(noquote(paste0(paste0(names(nis_set),collapse = "|"),"\n")),file = "../workspace/nis-subset-large.csv")
-write.csv.raw(nis_set, "../workspace/nis-subset-large.csv", sep = "|", append=TRUE)
+#cat(noquote(paste0(paste0(names(nis_set),collapse = "|"),"\n")),file = "../workspace/nis-subset-large.csv")
+#write.csv.raw(nis_set, "../workspace/nis-subset-large.csv", sep = "|") #, append=TRUE)
+
+# write.csv.raw() is now writing data with null bytes and other artefacts that prevent reading 
+# back in to R. Switching to readr write_delim() for now...
+library(readr)
+write_delim(nis_set,"../workspace/nis-subset-large.csv", delim = "|", na = "", quote_escape = FALSE)
 message("Wrote larger subset to nis-subset-large.csv")
 
 # Drop vars that are not currently needed.
 dropvars <- c(paste(grep("DXCCS[0-9]+",names(nis_set),value = T), sep = ","),paste(grep("DX[0-9]+",names(nis_set),value = T), sep = ","), paste(grep("E_CCS[0-9]+",names(nis_set),value = T), sep = ","), paste(grep("ECODE[0-9]+",names(nis_set),value = T), sep = ","), paste(grep("PR.+",names(nis_set),value = T), sep = ","), paste(grep("CHRON[0-9]+",names(nis_set),value = T), sep = ","), paste(grep("CHRONB[0-9]+",names(nis_set),value = T), sep = ","), paste(grep("PCLASS[0-9]+",names(nis_set),value = T), sep = ","), paste(grep("PR[0-9]+",names(nis_set),value = T), sep = ","), "PAY1_X", "PAY2", "AHAID", "HFIPSSTCO", "HOSPCITY","HOSPSTCO","HOSP_RNPCT", "HOSP_RNFTEAPD","HOSP_LPNFTEAPD")
-nis_set <- nis_set[setdiff(names(nis_set),dropvars)]
 
+nis_set <- nis_set[setdiff(names(nis_set),dropvars)]
 # keeping dxccs1-3 for potential later use
 #nis_set <- nis_set[-grep("DXCCS([4-9]|1[0-9]|2[0-5])",names(nis_set))]
 
@@ -151,8 +157,11 @@ source("../munging/make_spatial.R")
 # Write the smaller subset of data to a file.
 names(nis_set) <- str_to_upper(names(nis_set))
 # A bug in iotools 0-1.12 requires writing headers to file and then appending. Resolved in subsequent versions.
-cat(noquote(paste0(paste0(names(nis_set),collapse = "|"),"\n")),file = "../workspace/nis-subset-small.csv")
-write.csv.raw(nis_set, "../workspace/nis-subset-small.csv", sep = "|", append=TRUE)
+#cat(noquote(paste0(paste0(names(nis_set),collapse = "|"),"\n")),file = "../workspace/nis-subset-small.csv")
+# write.csv.raw(nis_set, "../workspace/nis-subset-small.csv", sep = "|") #, append=TRUE)
+# write.csv.raw() is now writing data with null bytes and other artefacts that prevent reading 
+# back in to R. Switching to readr write_delim() for now...
+write_delim(nis_set,"../workspace/nis-subset-small.csv", delim = "|", na = "", quote_escape = FALSE)
 message("Wrote smaller subset to nis-subset-small.csv")
 
 rm(dropvars)

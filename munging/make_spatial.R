@@ -1,6 +1,12 @@
-# Processing of spatial data -- zip codes, hospital referral and service zones
+# make_spatial.R : Adds hospital referral region (hrr) and hospital service area (hsa)
+# variables to the nis_set data frame.
 # 
-# Still using sp objects here. Converting to sf will be more time-consuming, 
+# HSA/HRR data and zipcode crosswalks were developed by the The Dartmouth Institute for 
+# Health Policy and Clinical Practice, and downloaded from the Dartmouth Atlas of 
+# Healthcare website. Zipcode spatial data for 2009 is from the ESRI Data and Maps data 
+# bundle included with ArcGIS, and downloaded from the Harvard Geospatial Library.
+
+# N.B. I am still using sp objects here. Converting to sf will be more time-consuming, 
 # so will need to revisit when finished with other scripts in the repo.
 
 if (basename(getwd()) == "nis-clustering") {

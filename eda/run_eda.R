@@ -65,6 +65,7 @@ nis_set %>% select(age,atype) %>% filter(atype != 4) %>% ggplot(aes(x=age, na.rm
 # that are random and not so uncommon (e.g. unusual position of fetus, etc.). To be conservative,
 # I will only drop rows with principal diagnosis of these conditions.  Since I am not using
 # disaggregated diagnoses, I have to temporarily add the original data back to the dataset.
+# 
 set_df_raw <- read.csv.raw("../workspace/nis-subset-large.csv", sep = "|",nrowsClasses = 10000)
 set_df <- set_df_raw %>% arrange(KEY)
 glimpse(set_df)
@@ -106,7 +107,7 @@ str(new_df_2)
 rm(nis_set)
 
 # ...and atype 4, in case any rows were missed -- creating new nis_set
-nis_set <- new_df_2 %>% filter(atype != 4) %>% select(-c(age,amonth,discwt))
+nis_set <- new_df_2 %>% filter(atype != 4) %>% select(-amonth)
 rm(new_df,new_df_1,new_df_2)
 
 # and look at age again
@@ -139,8 +140,11 @@ nis_set <- nis_set %>% select(-discwt)
 
 # write the reduced dataset to a file
 # a bug in iotools 0-1.12 requires writing headers to file and then appending. resolved in subsequent versions.
-cat(noquote(paste0(paste0(names(nis_set),collapse = "|"),"\n")),file = "nis-eda.csv")
-write.csv.raw(nis_set, "nis-eda.csv", sep = "|", append=TRUE)
+#cat(noquote(paste0(paste0(names(nis_set),collapse = "|"),"\n")),file = "nis-eda.csv")
+# write.csv.raw(nis_set, "nis-eda.csv", sep = "|") #, append=TRUE)
+# write.csv.raw() is now writing data with null bytes and other artefacts that prevent reading 
+# back in to R. Switching to readr write_delim() for now...
+write_delim(nis_set,"../workspace/nis-eda.csv", delim = "|", na = "", quote_escape = FALSE)
 
 # re-create the codebook
 names(nis_set) <- str_to_upper(names(nis_set))
@@ -209,8 +213,11 @@ apply(combos,2,function(i){
 
 # backup data to files
 # a bug in iotools 0-1.12 requires writing headers to file and then appending. resolved in subsequent versions.
-cat(noquote(paste0(paste0(names(edame),collapse = "|"),"\n")),file = "nis-eda-maine.csv")
-write.csv.raw(edame, "nis-eda-maine.csv", sep = "|", append=TRUE)
-cat(noquote(paste0(paste0(names(edanome),collapse = "|"),"\n")),file = "nis-eda-no-maine.csv")
-write.csv.raw(edanome, "nis-eda-no-maine.csv", sep = "|", append=TRUE)
-
+# cat(noquote(paste0(paste0(names(edame),collapse = "|"),"\n")),file = "nis-eda-maine.csv")
+# write.csv.raw(edame, "nis-eda-maine.csv", sep = "|") #, append=TRUE)
+# cat(noquote(paste0(paste0(names(edanome),collapse = "|"),"\n")),file = "nis-eda-no-maine.csv")
+# write.csv.raw(edanome, "nis-eda-no-maine.csv", sep = "|") #, append=TRUE)
+# write.csv.raw() is now writing data with null bytes and other artefacts that prevent reading 
+# back in to R. Switching to readr write_delim() for now...
+write_delim(edame,"../workspace/nis-eda-maine.csv", delim = "|", na = "", quote_escape = FALSE)
+write_delim(edanome,"../workspace/nis-eda-no-maine.csv", delim = "|", na = "", quote_escape = FALSE)
