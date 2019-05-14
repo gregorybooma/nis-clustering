@@ -53,8 +53,8 @@ maine_age_vals <- c(0, rep.int(2,4), rep.int(7,5), rep.int(12,5), rep.int(17,5),
 nis_set$MAINEAGE <- as.integer(mapvalues(nis_set$AGE, age_vals, maine_age_vals))
 label(nis_set$MAINEAGE) <- "Age integer value using Maine age assignments"
 
-# admission year -- YEAR corresponds to discharge year
-nis_set <- nis_set %>% mutate(AYEAR = case_when(AMONTH == 12 & LOS > 31 ~ 2008, AMONTH == 12 & DQTR != 4 ~ 2008, TRUE ~ 2009))
+# admission year -- YEAR = discharge year, DQTR = discharge qtr -- nb 2008 was a leap year
+nis_set <- nis_set %>% mutate(AYEAR = case_when(AMONTH %in% c(10:12) & DQTR %in% c(1:3) ~ 2008, AMONTH %in% c(7:12) & DQTR %in% c(1:2) ~ 2008, AMONTH %in% c(4:12) & DQTR == 1 ~ 2008, AMONTH %in% c(1:3) & LOS > 90 & DQTR == 1 ~ 2008, AMONTH %in% c(4:6) & LOS > 90 & DQTR %in% c(1:2) ~ 2008, AMONTH %in% c(7:9) & LOS > 91 & DQTR %in% c(1:3) ~ 2008, AMONTH %in% c(10:12) & LOS > 91 ~ 2008, TRUE ~ 2009))
 label(nis_set$AYEAR) <- "Admission year"
 
 # code of admission year and month

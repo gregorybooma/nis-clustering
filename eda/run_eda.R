@@ -166,8 +166,15 @@ label(eda$age) <- "Age in years at admission"
 #eda <- filter(eda, age < 22) #eda[eda$age < 22,]
 
 # drop unused levels in age
-edame <- eda %>% filter(hrrstate=="ME" & age < 22) %>% droplevels(except = c(1,3:11))
+edame <- eda %>% filter(hrrstate=="ME")
 
+# some of NH falls within ME HRR, so need to adjust age
+age_vals <- c(0:110)
+maine_age_vals <- c(0, rep.int(2,4), rep.int(7,5), rep.int(12,5), rep.int(17,5), rep.int(22,5), rep.int(27,5), rep.int(32,5), rep.int(37,5), rep.int(42,5), rep.int(47,5), rep.int(52,5), rep.int(57,5), rep.int(62,5), rep.int(67,5), rep.int(72,5), rep.int(77,5), rep.int(82,5), rep.int(87,26))
+
+edame <- edame %>% mutate_at("age",~mapvalues(., age_vals, maine_age_vals)) %>% filter(age < 22) %>% droplevels(except = c(1,3:11))
+  #nis_set$MAINEAGE <- as.integer()
+  
 # need to get environment for assigning objects inside of loops
 thisenvir <- environment()
 
